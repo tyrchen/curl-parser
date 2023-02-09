@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2023-02-09
+
+[163d9e3](163d9e301ffb9dda0325bcf4fac1053873f5cc95)...[26d7054](26d7054f8c5fbf56d3c57ad8008503e775efe6f3)
+
+### Features
+
+- Support template rendering so that variables in curl command could be pre-processed ([26d7054](26d7054f8c5fbf56d3c57ad8008503e775efe6f3) - 2023-02-09 by Tyr Chen)
+
 ## [0.1.1] - 2023-02-09
 
 [b55a4e5](b55a4e519b0124bd4f65b4784fca9183c2fa1fcb)...[163d9e3](163d9e301ffb9dda0325bcf4fac1053873f5cc95)
