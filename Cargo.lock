@@ -74,7 +74,7 @@ dependencies = [
 
 [[package]]
 name = "curl-parser"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "base64",
@@ -373,7 +373,6 @@ dependencies = [
  "memo-map",
  "self_cell",
  "serde",
- "serde_json",
  "v_htmlescape",
 ]
 
