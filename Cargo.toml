@@ -2,10 +2,20 @@
 name = "curl-parser"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+documentation = "https://docs.rs/curl-parser"
+repository = "https://github.com/tyrchen/curl-parser"
+homepage = "https://github.com/tyrchen/curl-parser"
+description = """
+Convert curl command to a ParsedRequest (could be further converted to reqwest::RequestBuilder)
+"""
+readme = "README.md"
+categories = ["web-programming"]
+keywords = ["curl", "reqwest"]
 
 [features]
-default = ["to-request"]
-to-request = ["reqwest"]
+default = ["reqwest"]
+reqwest = ["dep:reqwest"]
 
 [dependencies]
 base64 = "0.21.0"
