@@ -1,0 +1,30 @@
+// a curl cli parser
+ws = _{ " " | "\t" }
+newline = _{ "\r" | "\n" }
+slash = _{ "\\" ~ ws* ~ newline+ }
+
+single_quoted = _{ "'" ~ single_quoted_inner ~ "'" }
+single_quoted_inner = { (!"'" ~ ANY)* }
+double_quoted = _{ "\"" ~ double_quoted_inner ~ "\"" }
+double_quoted_inner = { (!"\"" ~ ANY)* }
+
+none_ws = { (!ws ~ ANY)+ }
+url = @{ "http" ~ "s"? ~ "://" ~ none_ws }
+option = _{ method_option | header_option | body_option | auth_option}
+
+method_option = _{ "-X" ~ ws+ ~ method }
+method = @{ "GET" | "POST" | "PUT" | "DELETE" | "PATCH" }
+
+header_option = _{ ("-H" | "--header") ~ ws+ ~ header }
+header = { single_quoted | double_quoted | none_ws }
+
+body_option = _{ ("-d" | "--data") ~ ws+ ~ body }
+body = { (!(("-" ~ ASCII_ALPHA_UPPER) | ("--" ~ ASCII_ALPHA_LOWER) | "\\") ~ ANY)+ }
+
+auth_option = _{ "-u" ~ ws+ ~ auth }
+auth = { single_quoted | double_quoted | none_ws }
+
+wss = _{ ws* ~ slash* ~ ws* }
+input = _{
+    SOI ~ "curl" ~ wss ~ (option ~ wss )* ~ url ~ (wss ~ option ~ wss)* ~ ws* ~ EOI
+}

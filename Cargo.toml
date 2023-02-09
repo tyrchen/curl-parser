@@ -1,0 +1,21 @@
+[package]
+name = "curl-parser"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["to-request"]
+to-request = ["reqwest"]
+
+[dependencies]
+base64 = "0.21.0"
+form_urlencoded = "1.1.0"
+http = "0.2.8"
+pest = "2.5.4"
+pest_derive = "2.5.4"
+reqwest = { version = "0.11.14", default-features = false, features = ["rustls-tls", "json"], optional = true }
+snafu = { version = "0.7.4", features = ["rust_1_61"] }
+
+[dev-dependencies]
+anyhow = "1.0.69"
+tokio = { version = "1.25.0", features = ["rt", "rt-multi-thread", "macros"] }
