@@ -37,4 +37,7 @@ pub enum Error {
     ParseHeaderValue {
         source: http::header::InvalidHeaderValue,
     },
+
+    #[snafu(display("Failed to render request template"))]
+    Render { source: minijinja::Error },
 }

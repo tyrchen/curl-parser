@@ -4,8 +4,10 @@ use http::{
     header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE},
     HeaderValue,
 };
+use minijinja::Environment;
 use pest::Parser as _;
 use pest_derive::Parser;
+use serde::Serialize;
 use snafu::ResultExt;
 use std::str::FromStr;
 
@@ -13,15 +15,7 @@ use std::str::FromStr;
 #[grammar = "src/curl.pest"]
 pub struct CurlParser;
 
-impl<'a> TryFrom<&'a str> for ParsedRequest<'a> {
-    type Error = Error;
-
-    fn try_from(s: &'a str) -> Result<Self> {
-        parse_input(s)
-    }
-}
-
-fn parse_input(input: &str) -> Result<ParsedRequest<'_>> {
+fn parse_input(input: &str) -> Result<ParsedRequest> {
     let pairs = CurlParser::parse(Rule::input, input).context(ParseRuleSnafu)?;
     let mut parsed = ParsedRequest::default();
     for pair in pairs {
@@ -84,7 +78,17 @@ fn parse_input(input: &str) -> Result<ParsedRequest<'_>> {
     Ok(parsed)
 }
 
-impl<'a> ParsedRequest<'a> {
+impl ParsedRequest {
+    pub fn load(input: &str, context: Option<impl Serialize>) -> Result<Self> {
+        if let Some(context) = context {
+            let env = Environment::new();
+            let input = env.render_str(input, context).context(RenderSnafu)?;
+            parse_input(&input)
+        } else {
+            parse_input(input)
+        }
+    }
+
     pub fn body(&mut self) -> Option<String> {
         if self.body.is_empty() {
             return None;
@@ -94,9 +98,7 @@ impl<'a> ParsedRequest<'a> {
             Some(content_type) if content_type == "application/x-www-form-urlencoded" => {
                 Some(self.form_urlencoded())
             }
-            Some(content_type) if content_type == "application/json" => {
-                self.body.pop().map(|v| v.into_owned())
-            }
+            Some(content_type) if content_type == "application/json" => self.body.pop(),
             v => unimplemented!("Unsupported content type: {:?}", v),
         }
     }
@@ -114,8 +116,8 @@ impl<'a> ParsedRequest<'a> {
 }
 
 #[cfg(feature = "reqwest")]
-impl<'a> From<ParsedRequest<'a>> for reqwest::RequestBuilder {
-    fn from(mut parsed: ParsedRequest<'a>) -> Self {
+impl From<ParsedRequest> for reqwest::RequestBuilder {
+    fn from(mut parsed: ParsedRequest) -> Self {
         let body = parsed.body();
         let req = reqwest::Client::new()
             .request(parsed.method, parsed.url.to_string())
@@ -142,6 +144,7 @@ mod tests {
     use super::*;
     use anyhow::Result;
     use http::{header::ACCEPT, Method};
+    use serde_json::json;
 
     #[test]
     fn parse_curl_1_should_work() -> Result<()> {
@@ -149,10 +152,10 @@ mod tests {
           -X PATCH \
           -d '{"visibility":"private"}' \
           -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer <YOUR-TOKEN>"\
+          -H "Authorization: Bearer {{ token }}"\
           -H "X-GitHub-Api-Version: 2022-11-28" \
           https://api.github.com/user/email/visibility "#;
-        let parsed = ParsedRequest::try_from(input)?;
+        let parsed = ParsedRequest::load(input, Some(json!({ "token": "abcd1234" })))?;
         assert_eq!(parsed.method, Method::PATCH);
         assert_eq!(
             parsed.url.to_string(),
@@ -172,16 +175,16 @@ mod tests {
         let input = r#"curl \
         -X POST \
         -H "Accept: application/vnd.github+json" \
-        -H "Authorization: Bearer <YOUR-TOKEN>"\
+        -H "Authorization: Bearer {{ token }}"\
         -H "X-GitHub-Api-Version: 2022-11-28" \
         https://api.github.com/user/emails \
         -d '{"emails":["octocat@github.com","mona@github.com","octocat@octocat.org"]}'"#;
-        let parsed = ParsedRequest::try_from(input)?;
+        let parsed = ParsedRequest::load(input, Some(json!({ "token": "abcd1234" })))?;
         assert_eq!(parsed.method, Method::POST);
         assert_eq!(parsed.url.to_string(), "https://api.github.com/user/emails");
         assert_eq!(
             parsed.headers.get(AUTHORIZATION),
-            Some(&HeaderValue::from_static("Bearer <YOUR-TOKEN>"))
+            Some(&HeaderValue::from_static("Bearer abcd1234"))
         );
         assert_eq!(
             parsed.body,
@@ -193,10 +196,13 @@ mod tests {
     #[tokio::test]
     async fn parse_curl_3_should_work() -> Result<()> {
         let input = r#"curl https://api.stripe.com/v1/charges \
-        -u sk_test_4eC39HqLyjWDarjtT1zdp7dc: \
+        -u {{ key }}: \
         -H "Stripe-Version: 2022-11-15""#;
 
-        let parsed = ParsedRequest::try_from(input)?;
+        let parsed = ParsedRequest::load(
+            input,
+            Some(json!({ "key": "sk_test_4eC39HqLyjWDarjtT1zdp7dc" })),
+        )?;
         assert_eq!(parsed.method, Method::GET);
         assert_eq!(parsed.url.to_string(), "https://api.stripe.com/v1/charges");
         assert_eq!(
