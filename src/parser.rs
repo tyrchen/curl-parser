@@ -1,7 +1,7 @@
 use crate::{error::*, ParsedRequest};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use http::{
-    header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE, USER_AGENT},
+    header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE},
     HeaderValue,
 };
 use pest::Parser as _;
@@ -81,9 +81,6 @@ fn parse_input(input: &str) -> Result<ParsedRequest<'_>> {
             .headers
             .insert(ACCEPT, HeaderValue::from_static("*/*"));
     }
-    parsed
-        .headers
-        .insert(USER_AGENT, HeaderValue::from_static("curl/7.84.0"));
     Ok(parsed)
 }
 
