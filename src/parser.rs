@@ -28,6 +28,15 @@ fn parse_input(input: &str) -> Result<ParsedRequest> {
                 let url = pair.as_str().parse().context(ParseUrlSnafu)?;
                 parsed.url = url;
             }
+            Rule::location => {
+                let s = pair
+                    .into_inner()
+                    .next()
+                    .expect("location string must be present")
+                    .as_str();
+                let location = s.parse().context(ParseUrlSnafu)?;
+                parsed.url = location;
+            }
             Rule::header => {
                 let s = pair
                     .into_inner()
@@ -177,7 +186,7 @@ mod tests {
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: Bearer {{ token }}"\
         -H "X-GitHub-Api-Version: 2022-11-28" \
-        https://api.github.com/user/emails \
+        -L "https://api.github.com/user/emails" \
         -d '{"emails":["octocat@github.com","mona@github.com","octocat@octocat.org"]}'"#;
         let parsed = ParsedRequest::load(input, Some(json!({ "token": "abcd1234" })))?;
         assert_eq!(parsed.method, Method::POST);
