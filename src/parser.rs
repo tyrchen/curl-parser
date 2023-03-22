@@ -1,9 +1,6 @@
 use crate::{error::*, ParsedRequest};
 use base64::{engine::general_purpose::STANDARD, Engine};
-use http::{
-    header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE},
-    HeaderValue,
-};
+use http::{header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE}, HeaderValue, Method};
 use minijinja::Environment;
 use pest::Parser as _;
 use pest_derive::Parser;
@@ -83,6 +80,9 @@ fn parse_input(input: &str) -> Result<ParsedRequest> {
         parsed
             .headers
             .insert(ACCEPT, HeaderValue::from_static("*/*"));
+    }
+    if !parsed.body.is_empty() && parsed.method == Method::GET {
+        parsed.method = Method::POST
     }
     Ok(parsed)
 }

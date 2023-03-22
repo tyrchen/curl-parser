@@ -12,7 +12,7 @@ none_ws = { (!ws ~ ANY)+ }
 url = @{ "http" ~ "s"? ~ "://" ~ none_ws }
 option = _{ method_option | header_option | location_option | body_option | auth_option}
 
-method_option = _{ "-X" ~ ws+ ~ method }
+method_option = _{ ("-X" | "--request") ~ ws+ ~ method }
 method = @{ "GET" | "POST" | "PUT" | "DELETE" | "PATCH" }
 
 header_option = _{ ("-H" | "--header") ~ ws+ ~ header }
