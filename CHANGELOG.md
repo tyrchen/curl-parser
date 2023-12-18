@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file. See [conven
 ### Bug Fixes
 
 - parse quoted url, set default http:// scheme for url (#3) - ([1149953](https://github.com/tyrchen/curl-parser/commit/1149953ecd024664828f44c84908e47e278762dd)) - Evgeniy Tatarkin
+- code format - ([fc3ae2b](https://github.com/tyrchen/curl-parser/commit/fc3ae2bead0c7c1c109e113676e496d9766ebf29)) - Tyr Chen
 
 ### Other
 
@@ -31,6 +32,7 @@ Thank you.
 Co-authored-by: Cường Nguyễn (Software Engineer) <cuong.nguyen4@be.com.vn>
 Co-authored-by: Tyr Chen <tyr.chen@gmail.com> - ([52ed623](https://github.com/tyrchen/curl-parser/commit/52ed6235fa91643c3dfa3602670bbe53ec053592)) - ffleader1
 - bump version to 0.3.1 - ([cd6ee9d](https://github.com/tyrchen/curl-parser/commit/cd6ee9dbec7e0802d284dadbd4724dae59e9d247)) - Tyr Chen
+- Update CHANGELOG.md - ([19f850d](https://github.com/tyrchen/curl-parser/commit/19f850d99034e3670527f128b7a998b1db2297ce)) - Tyr Chen
 
 ---
 ## [0.3.0](https://github.com/tyrchen/curl-parser/compare/v0.2.1..v0.3.0) - 2023-12-18
