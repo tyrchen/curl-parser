@@ -22,7 +22,15 @@ fn parse_input(input: &str) -> Result<ParsedRequest> {
                 parsed.method = method;
             }
             Rule::url => {
-                let url = pair.as_str().parse().context(ParseUrlSnafu)?;
+                let url = pair.into_inner().as_str();
+
+                // if empty scheme set curl defaults to HTTP
+                let url = if url.contains("://") {
+                    url.parse().context(ParseUrlSnafu)?
+                } else {
+                    format!("http://{url}").parse().context(ParseUrlSnafu)?
+                };
+
                 parsed.url = url;
             }
             Rule::location => {
@@ -220,6 +228,42 @@ mod tests {
                 "Basic c2tfdGVzdF80ZUMzOUhxTHlqV0Rhcmp0VDF6ZHA3ZGM6"
             ))
         );
+
+        #[cfg(feature = "reqwest")]
+        {
+            let req: reqwest::RequestBuilder = parsed.into();
+            let res = req.send().await?;
+            assert_eq!(res.status(), 200);
+            let _body = res.text().await?;
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn parse_curl_4_should_work() -> Result<()> {
+        let input = r#"curl "https://ifconfig.me/""#;
+
+        let parsed = ParsedRequest::load(input, None::<()>)?;
+        assert_eq!(parsed.method, Method::GET);
+        assert_eq!(parsed.url.to_string(), "https://ifconfig.me/");
+
+        #[cfg(feature = "reqwest")]
+        {
+            let req: reqwest::RequestBuilder = parsed.into();
+            let res = req.send().await?;
+            assert_eq!(res.status(), 200);
+            let _body = res.text().await?;
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn parse_curl_5_should_work() -> Result<()> {
+        let input = r#"curl 'ifconfig.me'"#;
+
+        let parsed = ParsedRequest::load(input, None::<()>)?;
+        assert_eq!(parsed.method, Method::GET);
+        assert_eq!(parsed.url.to_string(), "http://ifconfig.me/");
 
         #[cfg(feature = "reqwest")]
         {
