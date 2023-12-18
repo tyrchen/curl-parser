@@ -7,7 +7,7 @@ test:
 release:
 	@cargo release tag --execute
 	@git cliff -o CHANGELOG.md
-	@git commit -a -m "Update CHANGELOG.md" || true
+	@git commit -a -n -m "Update CHANGELOG.md" || true
 	@git push origin master
 	@cargo release push --execute
 
