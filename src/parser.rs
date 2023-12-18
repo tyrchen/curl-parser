@@ -1,6 +1,9 @@
 use crate::{error::*, ParsedRequest};
 use base64::{engine::general_purpose::STANDARD, Engine};
-use http::{header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE}, HeaderValue, Method};
+use http::{
+    header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+    HeaderValue, Method,
+};
 use minijinja::Environment;
 use pest::Parser as _;
 use pest_derive::Parser;
