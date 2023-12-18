@@ -11,13 +11,16 @@ double_quoted_inner = { (!"\"" ~ ANY)* }
 none_ws = { (!ws ~ ANY)+ }
 url_plain = @{ "http" ~ "s"? ~ "://" ~ none_ws }
 url = { single_quoted | double_quoted | url_plain }
-option = _{ method_option | header_option | body_option | auth_option}
+option = _{ method_option | header_option | location_option | body_option | auth_option}
 
-method_option = _{ "-X" ~ ws+ ~ method }
+method_option = _{ ("-X" | "--request") ~ ws+ ~ method }
 method = @{ "GET" | "POST" | "PUT" | "DELETE" | "PATCH" }
 
 header_option = _{ ("-H" | "--header") ~ ws+ ~ header }
 header = { single_quoted | double_quoted | none_ws }
+
+location_option = _{ ("-L" | "--location") ~ ws+ ~ location }
+location = { single_quoted | double_quoted | none_ws }
 
 body_option = _{ ("-d" | "--data") ~ ws+ ~ body }
 body = { (!(("-" ~ ASCII_ALPHA_UPPER) | ("--" ~ ASCII_ALPHA_LOWER) | "\\") ~ ANY)+ }
@@ -26,6 +29,7 @@ auth_option = _{ "-u" ~ ws+ ~ auth }
 auth = { single_quoted | double_quoted | none_ws }
 
 wss = _{ ws* ~ slash* ~ ws* }
+
 input = _{
-    SOI ~ "curl" ~ wss ~ (option ~ wss )* ~ url ~ (wss ~ option ~ wss)* ~ ws* ~ EOI
+    SOI ~ "curl" ~ wss ~ (option ~ wss )* ~ url? ~ (wss ~ option ~ wss)* ~ ws* ~ EOI
 }
