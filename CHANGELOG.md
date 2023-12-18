@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file. See [conven
 
 ### Miscellaneous Chores
 
-- update dependencies and bump to 0.4.0 - ([cbfcb93](https://github.com/tyrchen/curl-parser/commit/cbfcb9306ff2332bfddb944f594ddb8cd2f83e69)) - Tyr Chen
+- update deps and bump version to 0.3 - ([6861c72](https://github.com/tyrchen/curl-parser/commit/6861c72d721e409398fd366936e3062a66dc8878)) - Tyr Chen
 
 ### Other
 
