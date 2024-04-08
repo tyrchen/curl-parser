@@ -11,7 +11,7 @@ double_quoted_inner = { (!"\"" ~ ANY)* }
 none_ws = { (!ws ~ ANY)+ }
 url_plain = @{ "http" ~ "s"? ~ "://" ~ none_ws }
 url = { single_quoted | double_quoted | url_plain }
-option = _{ method_option | header_option | location_option | body_option | auth_option}
+option = _{ method_option | header_option | location_option | body_option | auth_option | ssl_verify_option }
 
 method_option = _{ ("-X" | "--request") ~ ws+ ~ method }
 method = @{ "GET" | "POST" | "PUT" | "DELETE" | "PATCH" }
@@ -27,6 +27,8 @@ body = { (!(("-" ~ ASCII_ALPHA_UPPER) | ("--" ~ ASCII_ALPHA_LOWER) | "\\") ~ ANY
 
 auth_option = _{ "-u" ~ ws+ ~ auth }
 auth = { single_quoted | double_quoted | none_ws }
+
+ssl_verify_option = { ("-k" | "--insecure") }
 
 wss = _{ ws* ~ slash* ~ ws* }
 

@@ -76,6 +76,9 @@ fn parse_input(input: &str) -> Result<ParsedRequest> {
                 let s = remove_quote(s);
                 parsed.body.push(s.into());
             }
+            Rule::ssl_verify_option => {
+                parsed.insecure = true;
+            }
             Rule::EOI => break,
             _ => unreachable!("Unexpected rule: {:?}", pair.as_rule()),
         }
@@ -109,7 +112,7 @@ impl ParsedRequest {
         }
     }
 
-    pub fn body(&mut self) -> Option<String> {
+    pub fn body(&self) -> Option<String> {
         if self.body.is_empty() {
             return None;
         }
@@ -118,7 +121,7 @@ impl ParsedRequest {
             Some(content_type) if content_type == "application/x-www-form-urlencoded" => {
                 Some(self.form_urlencoded())
             }
-            Some(content_type) if content_type == "application/json" => self.body.pop(),
+            Some(content_type) if content_type == "application/json" => self.body.last().cloned(),
             v => unimplemented!("Unsupported content type: {:?}", v),
         }
     }
@@ -133,21 +136,25 @@ impl ParsedRequest {
         }
         encoded.finish()
     }
-}
 
-#[cfg(feature = "reqwest")]
-impl From<ParsedRequest> for reqwest::RequestBuilder {
-    fn from(mut parsed: ParsedRequest) -> Self {
-        let body = parsed.body();
-        let req = reqwest::Client::new()
-            .request(parsed.method, parsed.url.to_string())
-            .headers(parsed.headers);
+    #[cfg(feature = "reqwest")]
+    pub fn build_reqwest(&self) -> Result<reqwest::RequestBuilder, reqwest::Error>  {
+        let body = self.body();
+        let client = reqwest::Client::builder()
+            .danger_accept_invalid_certs(self.insecure)
+            .build()?;
+        
+        let req_builder = client
+            .request(self.method.clone(), self.url.to_string())
+            .headers(self.headers.clone());
 
-        if let Some(body) = body {
-            req.body(body)
+        let req = if let Some(body) = body {
+            req_builder.body(body)
         } else {
-            req
-        }
+            req_builder
+        };
+
+        Ok(req)
     }
 }
 
@@ -234,7 +241,7 @@ mod tests {
 
         #[cfg(feature = "reqwest")]
         {
-            let req: reqwest::RequestBuilder = parsed.into();
+            let req = parsed.build_reqwest()?;
             let res = req.send().await?;
             assert_eq!(res.status(), 200);
             let _body = res.text().await?;
@@ -252,7 +259,7 @@ mod tests {
 
         #[cfg(feature = "reqwest")]
         {
-            let req: reqwest::RequestBuilder = parsed.into();
+            let req = parsed.build_reqwest()?;
             let res = req.send().await?;
             assert_eq!(res.status(), 200);
             let _body = res.text().await?;
@@ -270,11 +277,22 @@ mod tests {
 
         #[cfg(feature = "reqwest")]
         {
-            let req: reqwest::RequestBuilder = parsed.into();
+            let req = parsed.build_reqwest()?;
             let res = req.send().await?;
             assert_eq!(res.status(), 200);
             let _body = res.text().await?;
         }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn parse_curl_with_insecure_should_work() -> Result<(), Box<dyn std::error::Error>> {
+        let input = r#"curl -k 'https://example.com/'"#;
+    
+        let parsed = ParsedRequest::load(input, None::<()>)?;
+        assert_eq!(parsed.method, Method::GET);
+        assert_eq!(parsed.url.to_string(), "https://example.com/");
+        assert!(parsed.insecure);
         Ok(())
     }
 }
