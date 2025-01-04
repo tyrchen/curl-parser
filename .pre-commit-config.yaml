@@ -62,7 +62,7 @@ repos:
       - id: cargo-doc
         name: cargo doc
         description: generate documentation for the project
-        entry: bash -c 'cargo doc --no-deps --open'
+        entry: bash -c 'cargo doc --no-deps'
         language: rust
         files: \.rs$
         pass_filenames: false
