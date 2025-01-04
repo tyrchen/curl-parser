@@ -38,9 +38,10 @@
 //!
 //! ```
 //! use curl_parser::ParsedRequest;
+//! use std::str::FromStr;
 //! # fn main() -> Result<(), curl_parser::Error> {
 //! let curl = r#"curl https://api.example.com/users"#;
-//! let request = ParsedRequest::try_from(curl)?;
+//! let request = ParsedRequest::from_str(curl)?;
 //! # Ok(())
 //! # }
 //! ```
@@ -49,11 +50,13 @@
 //!
 //! ```
 //! use curl_parser::ParsedRequest;
+//! use serde_json::json;
 //! # fn main() -> Result<(), curl_parser::Error> {
 //! let curl = r#"curl -X POST https://api.example.com/users \
 //!     -H 'Content-Type: application/json' \
+//!     -H 'Authorization: Bearer {{ token }}' \
 //!     -d '{"name": "John Doe", "email": "john@example.com"}'"#;
-//! let request = ParsedRequest::try_from(curl)?;
+//! let request = ParsedRequest::load(curl, json!({ "token": "123456" }))?;
 //! # Ok(())
 //! # }
 //! ```
@@ -64,12 +67,13 @@
 //! # #[cfg(feature = "reqwest")]
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! use curl_parser::ParsedRequest;
+//! use serde_json::json;
 //!
 //! let curl = r#"curl -X POST https://api.example.com/users \
-//!     -H 'Authorization: Bearer token123' \
+//!     -H 'Authorization: Bearer {{ token }}' \
 //!     -d '{"name": "John Doe"}'"#;
 //!
-//! let parsed = ParsedRequest::try_from(curl)?;
+//! let parsed = ParsedRequest::load(curl, json!({ "token": "123456" }))?;
 //! let request = reqwest::RequestBuilder::try_from(&parsed)?;
 //! let response = request.send().await?;
 //! # Ok(())

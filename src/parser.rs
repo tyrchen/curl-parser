@@ -102,14 +102,10 @@ fn parse_input(input: &str) -> Result<ParsedRequest> {
 }
 
 impl ParsedRequest {
-    pub fn load(input: &str, context: Option<impl Serialize>) -> Result<Self> {
-        if let Some(context) = context {
-            let env = Environment::new();
-            let input = env.render_str(input, context).context(RenderSnafu)?;
-            parse_input(&input)
-        } else {
-            parse_input(input)
-        }
+    pub fn load(input: &str, context: impl Serialize) -> Result<Self> {
+        let env = Environment::new();
+        let input = env.render_str(input, context).context(RenderSnafu)?;
+        parse_input(&input)
     }
 
     pub fn body(&self) -> Option<String> {
@@ -135,6 +131,14 @@ impl ParsedRequest {
             encoded.append_pair(remove_quote(key), remove_quote(value));
         }
         encoded.finish()
+    }
+}
+
+impl FromStr for ParsedRequest {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        parse_input(s)
     }
 }
 
@@ -186,7 +190,7 @@ mod tests {
           -H "Authorization: Bearer {{ token }}"\
           -H "X-GitHub-Api-Version: 2022-11-28" \
           https://api.github.com/user/email/visibility "#;
-        let parsed = ParsedRequest::load(input, Some(json!({ "token": "abcd1234" })))?;
+        let parsed = ParsedRequest::load(input, json!({ "token": "abcd1234" }))?;
         assert_eq!(parsed.method, Method::PATCH);
         assert_eq!(
             parsed.url.to_string(),
@@ -210,7 +214,7 @@ mod tests {
         -H "X-GitHub-Api-Version: 2022-11-28" \
         -L "https://api.github.com/user/emails" \
         -d '{"emails":["octocat@github.com","mona@github.com","octocat@octocat.org"]}'"#;
-        let parsed = ParsedRequest::load(input, Some(json!({ "token": "abcd1234" })))?;
+        let parsed = ParsedRequest::load(input, json!({ "token": "abcd1234" }))?;
         assert_eq!(parsed.method, Method::POST);
         assert_eq!(parsed.url.to_string(), "https://api.github.com/user/emails");
         assert_eq!(
@@ -230,10 +234,8 @@ mod tests {
         -u {{ key }}: \
         -H "Stripe-Version: 2022-11-15""#;
 
-        let parsed = ParsedRequest::load(
-            input,
-            Some(json!({ "key": "sk_test_4eC39HqLyjWDarjtT1zdp7dc" })),
-        )?;
+        let parsed =
+            ParsedRequest::load(input, json!({ "key": "sk_test_4eC39HqLyjWDarjtT1zdp7dc" }))?;
         assert_eq!(parsed.method, Method::GET);
         assert_eq!(parsed.url.to_string(), "https://api.stripe.com/v1/charges");
         assert_eq!(
@@ -257,7 +259,7 @@ mod tests {
     async fn parse_curl_4_should_work() -> Result<()> {
         let input = r#"curl "https://ifconfig.me/""#;
 
-        let parsed = ParsedRequest::load(input, None::<()>)?;
+        let parsed = ParsedRequest::from_str(input)?;
         assert_eq!(parsed.method, Method::GET);
         assert_eq!(parsed.url.to_string(), "https://ifconfig.me/");
 
@@ -275,7 +277,7 @@ mod tests {
     async fn parse_curl_5_should_work() -> Result<()> {
         let input = r#"curl 'ifconfig.me'"#;
 
-        let parsed = ParsedRequest::load(input, None::<()>)?;
+        let parsed = ParsedRequest::from_str(input)?;
         assert_eq!(parsed.method, Method::GET);
         assert_eq!(parsed.url.to_string(), "http://ifconfig.me/");
 
@@ -293,7 +295,7 @@ mod tests {
     async fn parse_curl_with_insecure_should_work() -> Result<(), Box<dyn std::error::Error>> {
         let input = r#"curl -k 'https://example.com/'"#;
 
-        let parsed = ParsedRequest::load(input, None::<()>)?;
+        let parsed: ParsedRequest = input.parse()?;
         assert_eq!(parsed.method, Method::GET);
         assert_eq!(parsed.url.to_string(), "https://example.com/");
         assert!(parsed.insecure);
