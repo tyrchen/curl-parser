@@ -18,18 +18,18 @@ default = ["reqwest"]
 reqwest = ["dep:reqwest"]
 
 [dependencies]
-base64 = "0.21"
+base64 = "0.22"
 form_urlencoded = "1"
-http = "0.2"
+http = "1"
 minijinja = { version = "1", features = ["loader", "speedups"] }
 pest = "2"
 pest_derive = "2"
-reqwest = { version = "0.11", default-features = false, features = [
+reqwest = { version = "0.12", default-features = false, features = [
   "rustls-tls",
   "json",
 ], optional = true }
 serde = { version = "1", features = ["derive"] }
-snafu = { version = "0.7", features = ["rust_1_61"] }
+snafu = { version = "0.8", features = ["rust_1_61"] }
 
 [dev-dependencies]
 anyhow = "1"

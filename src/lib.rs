@@ -11,4 +11,5 @@ pub struct ParsedRequest {
     pub url: Uri,
     pub headers: HeaderMap,
     pub body: Vec<String>,
+    pub insecure: bool,
 }
