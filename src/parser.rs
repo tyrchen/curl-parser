@@ -136,17 +136,21 @@ impl ParsedRequest {
         }
         encoded.finish()
     }
+}
 
-    #[cfg(feature = "reqwest")]
-    pub fn build_reqwest(&self) -> Result<reqwest::RequestBuilder, reqwest::Error>  {
-        let body = self.body();
+#[cfg(feature = "reqwest")]
+impl TryFrom<&ParsedRequest> for reqwest::RequestBuilder {
+    type Error = reqwest::Error;
+
+    fn try_from(req: &ParsedRequest) -> Result<Self, Self::Error> {
+        let body = req.body();
         let client = reqwest::Client::builder()
-            .danger_accept_invalid_certs(self.insecure)
+            .danger_accept_invalid_certs(req.insecure)
             .build()?;
-        
+
         let req_builder = client
-            .request(self.method.clone(), self.url.to_string())
-            .headers(self.headers.clone());
+            .request(req.method.clone(), req.url.to_string())
+            .headers(req.headers.clone());
 
         let req = if let Some(body) = body {
             req_builder.body(body)
@@ -241,7 +245,7 @@ mod tests {
 
         #[cfg(feature = "reqwest")]
         {
-            let req = parsed.build_reqwest()?;
+            let req = reqwest::RequestBuilder::try_from(&parsed)?;
             let res = req.send().await?;
             assert_eq!(res.status(), 200);
             let _body = res.text().await?;
@@ -259,7 +263,7 @@ mod tests {
 
         #[cfg(feature = "reqwest")]
         {
-            let req = parsed.build_reqwest()?;
+            let req = reqwest::RequestBuilder::try_from(&parsed)?;
             let res = req.send().await?;
             assert_eq!(res.status(), 200);
             let _body = res.text().await?;
@@ -277,7 +281,7 @@ mod tests {
 
         #[cfg(feature = "reqwest")]
         {
-            let req = parsed.build_reqwest()?;
+            let req = reqwest::RequestBuilder::try_from(&parsed)?;
             let res = req.send().await?;
             assert_eq!(res.status(), 200);
             let _body = res.text().await?;
@@ -288,7 +292,7 @@ mod tests {
     #[tokio::test]
     async fn parse_curl_with_insecure_should_work() -> Result<(), Box<dyn std::error::Error>> {
         let input = r#"curl -k 'https://example.com/'"#;
-    
+
         let parsed = ParsedRequest::load(input, None::<()>)?;
         assert_eq!(parsed.method, Method::GET);
         assert_eq!(parsed.url.to_string(), "https://example.com/");

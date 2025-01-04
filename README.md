@@ -17,7 +17,7 @@ let input = r#"curl \
 let context = json!({ "token": "abcd1234" });
 let parsed = curl_parser::ParsedRequest::load(input, Some(context)) ?;
 println!("{:#?}", parsed);
-let req: reqwest::RequestBuilder = parsed.into();
+let req: reqwest::RequestBuilder = parsed.try_into()?;
 let res = req.send().await?;
 assert_eq!(res.status(), 200);
 ```
