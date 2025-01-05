@@ -3,6 +3,73 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [0.4.2](https://github.com/tyrchen/curl-parser/compare/v0.4.1..v0.4.2) - 2025-01-05
+
+### Features
+
+- allow shell comments before the curl command - ([b59e285](https://github.com/tyrchen/curl-parser/commit/b59e28525fc5d76cd53f1e8d32d6809a6faab3b1)) - Tyr Chen
+
+### Miscellaneous Chores
+
+- add updated precommit and update gh action - ([865271d](https://github.com/tyrchen/curl-parser/commit/865271d0a95cc21f80fb07e7e609f195bee74dbc)) - Tyr Chen
+
+---
+## [0.4.1](https://github.com/tyrchen/curl-parser/compare/v0.4.0..v0.4.1) - 2025-01-04
+
+### Miscellaneous Chores
+
+- provide FromStr and make load() easiler to use. - ([1ed3ae5](https://github.com/tyrchen/curl-parser/commit/1ed3ae52fd9349bc15bc613fdeea564d56242ebd)) - Tyr Chen
+
+---
+## [0.4.0](https://github.com/tyrchen/curl-parser/compare/v0.3.1..v0.4.0) - 2025-01-04
+
+### Miscellaneous Chores
+
+- add doc and use TryFrom to convert a ParsedRequest to RequestBuilder - ([9f76e25](https://github.com/tyrchen/curl-parser/commit/9f76e256ecb56c5d477b64ed7763d2e578c2bc00)) - Tyr Chen
+
+### Other
+
+- Update CHANGELOG.md - ([5caca5e](https://github.com/tyrchen/curl-parser/commit/5caca5e7c6fbf7f528b4ed3d480573ca26b20b0d)) - Tyr Chen
+- Support for Insecure Option and Dependency Updates (#8)
+
+This pull request introduces the following key changes:
+
+### Features:
+- **Insecure Option Support**: Implements the `-k` or `--insecure`
+option in the curl command parser. This feature allows users to bypass
+SSL certificate verification, enhancing flexibility for testing and
+development environments where self-signed certificates are common. It's
+crucial to note that this option should be used cautiously, especially
+in production environments, due to the security implications of
+disabling SSL verification.
+
+### Improvements:
+- **Dependency Updates**: Upgraded various dependencies to their latest
+versions. This update is part of our ongoing effort to maintain the
+project's security and performance by staying up-to-date with the latest
+fixes and features provided by our dependencies. The updates include
+critical security patches and performance enhancements that contribute
+to the overall robustness of our application.
+
+
+### Testing:
+- Added comprehensive tests for the new insecure option to ensure its
+correct behavior. These tests validate that the SSL certificate
+verification is appropriately bypassed when the `-k` or `--insecure`
+option is used.
+- Updated existing tests to accommodate the changes introduced by the
+dependency updates. Ensured that all tests pass with the updated
+libraries, confirming compatibility and stability.
+
+---------
+
+Signed-off-by: deadash <dead.ash@qq.com> - ([d6a8df0](https://github.com/tyrchen/curl-parser/commit/d6a8df0cd0fc2b8dddb1eb53775b208a9c216ba9)) - deadash
+
+### Refactoring
+
+- **(README)** update curl parsing example in README (#11) - ([8d50a6f](https://github.com/tyrchen/curl-parser/commit/8d50a6f15623ad5ebd5e57252ed2e281c0b70726)) - edc-lib
+
+---
 ## [0.3.1](https://github.com/tyrchen/curl-parser/compare/v0.3.0..v0.3.1) - 2023-12-18
 
 ### Bug Fixes
