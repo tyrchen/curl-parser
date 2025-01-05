@@ -3,6 +3,8 @@ ws = _{ " " | "\t" }
 newline = _{ "\r" | "\n" }
 slash = _{ "\\" ~ ws* ~ newline+ }
 
+comment = _{ "#" ~ (!newline ~ ANY)* ~ newline }
+
 single_quoted = _{ "'" ~ single_quoted_inner ~ "'" }
 single_quoted_inner = { (!"'" ~ ANY)* }
 double_quoted = _{ "\"" ~ double_quoted_inner ~ "\"" }
@@ -33,5 +35,5 @@ ssl_verify_option = { ("-k" | "--insecure") }
 wss = _{ ws* ~ slash* ~ ws* }
 
 input = _{
-    SOI ~ "curl" ~ wss ~ (option ~ wss )* ~ url? ~ (wss ~ option ~ wss)* ~ ws* ~ EOI
+    SOI ~ (comment | ws | newline)* ~ ws* ~ "curl" ~ wss ~ (option ~ wss )* ~ url? ~ (wss ~ option ~ wss)* ~ ws* ~ EOI
 }

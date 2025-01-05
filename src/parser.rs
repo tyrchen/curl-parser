@@ -293,7 +293,8 @@ mod tests {
 
     #[tokio::test]
     async fn parse_curl_with_insecure_should_work() -> Result<(), Box<dyn std::error::Error>> {
-        let input = r#"curl -k 'https://example.com/'"#;
+        let input = r#"#this is good
+        curl -k 'https://example.com/'"#;
 
         let parsed: ParsedRequest = input.parse()?;
         assert_eq!(parsed.method, Method::GET);
