@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [0.4.3](https://github.com/tyrchen/curl-parser/compare/v0.4.2..v0.4.3) - 2025-01-06
+
+### Bug Fixes
+
+- if body contains a url which has '-', the grammar will break - ([ef082ab](https://github.com/tyrchen/curl-parser/commit/ef082abff004f4aa286d7ff73ef2e67ffbda4010)) - Tyr Chen
+
+### Other
+
+- Update CHANGELOG.md - ([bea3ee3](https://github.com/tyrchen/curl-parser/commit/bea3ee30952f784d5122f5eb53bc9c7b1da007f8)) - Tyr Chen
+
+---
 ## [0.4.2](https://github.com/tyrchen/curl-parser/compare/v0.4.1..v0.4.2) - 2025-01-05
 
 ### Features
