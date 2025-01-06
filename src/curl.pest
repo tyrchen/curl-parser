@@ -25,7 +25,7 @@ location_option = _{ ("-L" | "--location") ~ ws+ ~ location }
 location = { single_quoted | double_quoted | none_ws }
 
 body_option = _{ ("-d" | "--data") ~ ws+ ~ body }
-body = { (!((" -" ~ ASCII_ALPHA_UPPER) | (" --" ~ ASCII_ALPHA_LOWER) | "\\") ~ ANY)+ }
+body = { single_quoted | double_quoted | (!((" -" ~ ASCII_ALPHA_UPPER) | (" --" ~ ASCII_ALPHA_LOWER) | "\\") ~ ANY)+ }
 
 auth_option = _{ "-u" ~ ws+ ~ auth }
 auth = { single_quoted | double_quoted | none_ws }
