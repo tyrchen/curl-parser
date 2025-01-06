@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [0.4.4](https://github.com/tyrchen/curl-parser/compare/v0.4.3..v0.4.4) - 2025-01-06
+
+### Bug Fixes
+
+- parse body in different manner - ([73dda54](https://github.com/tyrchen/curl-parser/commit/73dda5489da8bacfb366bdcc61ae4de96b537031)) - Tyr Chen
+
+### Other
+
+- Update CHANGELOG.md - ([d38fc38](https://github.com/tyrchen/curl-parser/commit/d38fc3811116f3215f482323cdb63376260020a2)) - Tyr Chen
+
+---
 ## [0.4.3](https://github.com/tyrchen/curl-parser/compare/v0.4.2..v0.4.3) - 2025-01-06
 
 ### Bug Fixes
