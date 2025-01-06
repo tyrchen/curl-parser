@@ -302,4 +302,13 @@ mod tests {
         assert!(parsed.insecure);
         Ok(())
     }
+
+    #[tokio::test]
+    async fn parse_curl_with_body_should_work() -> Result<()> {
+        let input = r#"curl --location https://example.com --header 'Content-Type: application/json' -d '{"name":"John","age":30}'"#;
+        let parsed = ParsedRequest::from_str(input)?;
+        assert_eq!(parsed.method, Method::POST);
+        assert_eq!(parsed.body, vec!["{\"name\":\"John\",\"age\":30}"]);
+        Ok(())
+    }
 }
