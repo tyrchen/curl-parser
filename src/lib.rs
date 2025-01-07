@@ -83,14 +83,19 @@
 pub(crate) mod error;
 mod parser;
 
-use http::{HeaderMap, Method, Uri};
+#[cfg(feature = "uri")]
+use http::Uri;
+use http::{HeaderMap, Method};
 
 pub use error::Error;
 
 #[derive(Debug, Clone, Default)]
 pub struct ParsedRequest {
     pub method: Method,
+    #[cfg(feature = "uri")]
     pub url: Uri,
+    #[cfg(not(feature = "uri"))]
+    pub url: String,
     pub headers: HeaderMap,
     pub body: Vec<String>,
     pub insecure: bool,

@@ -28,10 +28,17 @@ fn parse_input(input: &str) -> Result<ParsedRequest> {
                 let url = pair.into_inner().as_str();
 
                 // if empty scheme set curl defaults to HTTP
+                #[cfg(feature = "uri")]
                 let url = if url.contains("://") {
                     url.parse().context(ParseUrlSnafu)?
                 } else {
                     format!("http://{url}").parse().context(ParseUrlSnafu)?
+                };
+                #[cfg(not(feature = "uri"))]
+                let url = if url.contains("://") {
+                    url.to_string()
+                } else {
+                    format!("http://{url}/")
                 };
 
                 parsed.url = url;
@@ -42,7 +49,10 @@ fn parse_input(input: &str) -> Result<ParsedRequest> {
                     .next()
                     .expect("location string must be present")
                     .as_str();
+                #[cfg(feature = "uri")]
                 let location = s.parse().context(ParseUrlSnafu)?;
+                #[cfg(not(feature = "uri"))]
+                let location = s.to_string();
                 parsed.url = location;
             }
             Rule::header => {

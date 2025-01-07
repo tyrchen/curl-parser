@@ -1,6 +1,6 @@
 [package]
 name = "curl-parser"
-version = "0.4.4"
+version = "0.5.0"
 edition = "2021"
 license = "MIT"
 documentation = "https://docs.rs/curl-parser"
@@ -14,8 +14,9 @@ categories = ["web-programming"]
 keywords = ["curl", "reqwest"]
 
 [features]
-default = ["reqwest"]
+default = ["reqwest", "uri"]
 reqwest = ["dep:reqwest"]
+uri = []
 
 [dependencies]
 base64 = "0.22"
