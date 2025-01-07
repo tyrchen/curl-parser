@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [0.5.0](https://github.com/tyrchen/curl-parser/compare/v0.4.4..v0.5.0) - 2025-01-07
+
+### Features
+
+- do not parse url to uri for certain use cases (e.g. jinja2 templating) - ([2f98391](https://github.com/tyrchen/curl-parser/commit/2f983919fa0fda19b964aee334daa8b9e5353d15)) - Tyr Chen
+
+### Other
+
+- Update CHANGELOG.md - ([9019e3d](https://github.com/tyrchen/curl-parser/commit/9019e3db3a388b3a1a2fbf07f822c5ceadec7ade)) - Tyr Chen
+
+---
 ## [0.4.4](https://github.com/tyrchen/curl-parser/compare/v0.4.3..v0.4.4) - 2025-01-06
 
 ### Bug Fixes
