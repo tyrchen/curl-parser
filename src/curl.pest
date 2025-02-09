@@ -24,7 +24,7 @@ header = { single_quoted | double_quoted | none_ws }
 location_option = _{ ("-L" | "--location") ~ ws+ ~ location }
 location = { single_quoted | double_quoted | none_ws }
 
-body_option = _{ ("-d" | "--data") ~ ws+ ~ body }
+body_option = _{ ("--data-raw" | "--data" | "-d") ~ ws+ ~ body }
 body = { single_quoted | double_quoted | (!((" -" ~ ASCII_ALPHA_UPPER) | (" --" ~ ASCII_ALPHA_LOWER) | "\\") ~ ANY)+ }
 
 auth_option = _{ "-u" ~ ws+ ~ auth }

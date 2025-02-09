@@ -321,4 +321,13 @@ mod tests {
         assert_eq!(parsed.body, vec!["{\"-name\":\"--John\",\" --age\":30}"]);
         Ok(())
     }
+
+    #[tokio::test]
+    async fn parse_curl_with_data_raw_should_work() -> Result<()> {
+        let input = r#"curl --location 'https://httpbin.org/post' --header 'Content-Type: application/json' --data-raw '{"name":"John Doe","age":30}'"#;
+        let parsed = ParsedRequest::from_str(input)?;
+        assert_eq!(parsed.method, Method::POST);
+        assert_eq!(parsed.body, vec![r#"{"name":"John Doe","age":30}"#]);
+        Ok(())
+    }
 }
