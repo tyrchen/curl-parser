@@ -21,7 +21,8 @@ fn parse_input(input: &str) -> Result<ParsedRequest> {
     for pair in pairs {
         match pair.as_rule() {
             Rule::method => {
-                let method = pair.as_str().parse().context(ParseMethodSnafu)?;
+                let method_str = remove_quote(pair.as_str());
+                let method = method_str.parse().context(ParseMethodSnafu)?;
                 parsed.method = method;
             }
             Rule::url => {
@@ -333,12 +334,76 @@ mod tests {
 
     #[tokio::test]
     async fn parse_curl_with_unquoted_headers_should_work() -> Result<()> {
-        let input = r#"curl -X GET https://httpbin.org/get -H accept: application/json -H X-API-KEY: TEST"#;
+        let input =
+            r#"curl -X GET https://httpbin.org/get -H accept: application/json -H X-API-KEY: TEST"#;
         let parsed = ParsedRequest::from_str(input)?;
         assert_eq!(parsed.method, Method::GET);
         assert_eq!(parsed.url.to_string(), "https://httpbin.org/get");
-        assert_eq!(parsed.headers.get("accept"), Some(&HeaderValue::from_static("application/json")));
-        assert_eq!(parsed.headers.get("X-API-KEY"), Some(&HeaderValue::from_static("TEST")));
+        assert_eq!(
+            parsed.headers.get("accept"),
+            Some(&HeaderValue::from_static("application/json"))
+        );
+        assert_eq!(
+            parsed.headers.get("X-API-KEY"),
+            Some(&HeaderValue::from_static("TEST"))
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn parse_curl_with_multiline_json_should_work() -> Result<()> {
+        let input = r#"curl -X 'POST' \
+  'https://httpbin.org/post' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "metadata": {
+    "group_by": "ad_name",
+    "limit": 10,
+    "page": 1,
+    "sort": {
+      "by": "ad_name",
+      "order": "asc"
+    }
+  },
+  "query": [
+  ]
+}'"#;
+        let parsed = ParsedRequest::from_str(input)?;
+        assert_eq!(parsed.method, Method::POST);
+        assert_eq!(parsed.url.to_string(), "https://httpbin.org/post");
+        assert_eq!(
+            parsed.headers.get(CONTENT_TYPE),
+            Some(&HeaderValue::from_static("application/json"))
+        );
+        assert_eq!(
+            parsed.headers.get(ACCEPT),
+            Some(&HeaderValue::from_static("application/json"))
+        );
+        let expected_body = r#"{
+  "metadata": {
+    "group_by": "ad_name",
+    "limit": 10,
+    "page": 1,
+    "sort": {
+      "by": "ad_name",
+      "order": "asc"
+    }
+  },
+  "query": [
+  ]
+}"#;
+        assert_eq!(parsed.body, vec![expected_body]);
+
+        #[cfg(feature = "reqwest")]
+        {
+            let req = reqwest::RequestBuilder::try_from(&parsed)?;
+            let res = req.send().await?;
+            assert_eq!(res.status(), 200);
+            let body = res.text().await?;
+            assert!(body.contains("ad_name")); // Verify the JSON was sent correctly
+        }
+
         Ok(())
     }
 }
