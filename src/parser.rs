@@ -330,4 +330,15 @@ mod tests {
         assert_eq!(parsed.body, vec![r#"{"name":"John Doe","age":30}"#]);
         Ok(())
     }
+
+    #[tokio::test]
+    async fn parse_curl_with_unquoted_headers_should_work() -> Result<()> {
+        let input = r#"curl -X GET https://httpbin.org/get -H accept: application/json -H X-API-KEY: TEST"#;
+        let parsed = ParsedRequest::from_str(input)?;
+        assert_eq!(parsed.method, Method::GET);
+        assert_eq!(parsed.url.to_string(), "https://httpbin.org/get");
+        assert_eq!(parsed.headers.get("accept"), Some(&HeaderValue::from_static("application/json")));
+        assert_eq!(parsed.headers.get("X-API-KEY"), Some(&HeaderValue::from_static("TEST")));
+        Ok(())
+    }
 }

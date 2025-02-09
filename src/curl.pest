@@ -19,7 +19,9 @@ method_option = _{ ("-X" | "--request") ~ ws+ ~ method }
 method = @{ "GET" | "POST" | "PUT" | "DELETE" | "PATCH" }
 
 header_option = _{ ("-H" | "--header") ~ ws+ ~ header }
-header = { single_quoted | double_quoted | none_ws }
+header = { single_quoted | double_quoted | implicit_quoted }
+implicit_quoted = { !("'" | "\"" | "-") ~ (!(ws ~ ("-" | "--")) ~ ANY)+ }
+header_content = { (!("'" | "-") ~ ANY)+ }
 
 location_option = _{ ("-L" | "--location") ~ ws+ ~ location }
 location = { single_quoted | double_quoted | none_ws }
