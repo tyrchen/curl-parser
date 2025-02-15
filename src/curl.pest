@@ -11,21 +11,40 @@ double_quoted = _{ "\"" ~ double_quoted_inner ~ "\"" }
 double_quoted_inner = { (!"\"" ~ ANY)* }
 
 none_ws = { (!ws ~ ANY)+ }
-url_plain = @{ "http" ~ "s"? ~ "://" ~ none_ws }
+url_plain = @{ (("http" ~ "s"? ~ "://") | "") ~ domain ~ path? }
+domain = _{ (ASCII_ALPHANUMERIC | "-")+ ~ ("." ~ (ASCII_ALPHANUMERIC | "-")+)* }
+path = _{ 
+    "/" ~ 
+    (
+        ASCII_ALPHANUMERIC |
+        "/" | 
+        "-" | 
+        "_" |
+        "." |
+        "?" |
+        "=" |
+        "%" |
+        "&"
+    )*
+}
 url = { single_quoted | double_quoted | url_plain }
 option = _{ method_option | header_option | location_option | body_option | auth_option | ssl_verify_option }
 
 method_option = _{ ("-X" | "--request") ~ ws+ ~ method }
-method = @{ "GET" | "POST" | "PUT" | "DELETE" | "PATCH" }
+method = @{ quoted_method | raw_method }
+quoted_method = _{ "'" ~ raw_method ~ "'" | "\"" ~ raw_method ~ "\"" }
+raw_method = _{ "GET" | "POST" | "PUT" | "DELETE" | "PATCH" }
 
 header_option = _{ ("-H" | "--header") ~ ws+ ~ header }
-header = { single_quoted | double_quoted | none_ws }
+header = { single_quoted | double_quoted | implicit_quoted }
+implicit_quoted = { !("'" | "\"" | "-") ~ (!(ws ~ ("-" | "--")) ~ ANY)+ }
+header_content = { (!("'" | "-") ~ ANY)+ }
 
 location_option = _{ ("-L" | "--location") ~ ws+ ~ location }
 location = { single_quoted | double_quoted | none_ws }
 
-body_option = _{ ("-d" | "--data") ~ ws+ ~ body }
-body = { single_quoted | double_quoted | (!((" -" ~ ASCII_ALPHA_UPPER) | (" --" ~ ASCII_ALPHA_LOWER) | "\\") ~ ANY)+ }
+body_option = _{ ("--data-raw" | "--data" | "-d") ~ ws+ ~ body }
+body = { single_quoted | double_quoted | (!(ws ~ ("-" | "--")) ~ (!(newline | ws ~ ("-" | "--")) ~ ANY))+ }
 
 auth_option = _{ "-u" ~ ws+ ~ auth }
 auth = { single_quoted | double_quoted | none_ws }
