@@ -406,4 +406,13 @@ mod tests {
 
         Ok(())
     }
+
+    #[tokio::test]
+    async fn parse_curl_with_no_protocol_should_work() -> Result<()> {
+        let input = r#"curl -X GET httpbin.org/get"#;
+        let parsed = ParsedRequest::from_str(input)?;
+        assert_eq!(parsed.method, Method::GET);
+        assert_eq!(parsed.url.to_string(), "http://httpbin.org/get");
+        Ok(())
+    }
 }
