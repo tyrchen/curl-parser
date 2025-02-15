@@ -11,7 +11,9 @@ double_quoted = _{ "\"" ~ double_quoted_inner ~ "\"" }
 double_quoted_inner = { (!"\"" ~ ANY)* }
 
 none_ws = { (!ws ~ ANY)+ }
-url_plain = @{ ("http" ~ "s"? ~ "://")? ~ none_ws }
+url_plain = @{ (("http" ~ "s"? ~ "://") | "") ~ domain ~ path? }
+domain = _{ (ASCII_ALPHANUMERIC | "-")+ ~ ("." ~ (ASCII_ALPHANUMERIC | "-")+)* }
+path = _{ "/" ~ (ASCII_ALPHANUMERIC | "/" | "-" | "_")* }
 url = { single_quoted | double_quoted | url_plain }
 option = _{ method_option | header_option | location_option | body_option | auth_option | ssl_verify_option }
 

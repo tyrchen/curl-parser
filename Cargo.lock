@@ -119,7 +119,7 @@ dependencies = [
 
 [[package]]
 name = "curl-parser"
-version = "0.5.3"
+version = "0.5.4"
 dependencies = [
  "anyhow",
  "base64",
