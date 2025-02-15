@@ -415,4 +415,16 @@ mod tests {
         assert_eq!(parsed.url.to_string(), "http://httpbin.org/get");
         Ok(())
     }
+
+    #[tokio::test]
+    async fn parse_curl_with_special_chars_should_work() -> Result<()> {
+        let input = r#"curl 'https://httpbin.org/anything/test.php?key1=value1&key2=value2~!@%24%25%5E*&user=john.doe+test@example.com'"#;
+        let parsed = ParsedRequest::from_str(input)?;
+        assert_eq!(parsed.method, Method::GET);
+        assert_eq!(
+        parsed.url.to_string(),
+        "https://httpbin.org/anything/test.php?key1=value1&key2=value2~!@%24%25%5E*&user=john.doe+test@example.com"
+    );
+        Ok(())
+    }
 }
