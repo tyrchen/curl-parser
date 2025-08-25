@@ -1,8 +1,8 @@
-use crate::{error::*, ParsedRequest};
-use base64::{engine::general_purpose::STANDARD, Engine};
+use crate::{ParsedRequest, error::*};
+use base64::{Engine, engine::general_purpose::STANDARD};
 use http::{
-    header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE},
     HeaderValue, Method,
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE, HeaderName},
 };
 use minijinja::Environment;
 use pest::Parser as _;
@@ -10,6 +10,7 @@ use pest_derive::Parser;
 use serde::Serialize;
 use snafu::ResultExt;
 use std::str::FromStr;
+use std::sync::OnceLock;
 
 #[derive(Debug, Parser)]
 #[grammar = "src/curl.pest"]
@@ -32,13 +33,22 @@ fn parse_input(input: &str) -> Result<ParsedRequest> {
                 let url = if url.contains("://") {
                     url.parse().context(ParseUrlSnafu)?
                 } else {
-                    format!("http://{url}").parse().context(ParseUrlSnafu)?
+                    // Pre-allocate with known prefix length
+                    let mut full_url = String::with_capacity(7 + url.len()); // "http://" + url
+                    full_url.push_str("http://");
+                    full_url.push_str(url);
+                    full_url.parse().context(ParseUrlSnafu)?
                 };
                 #[cfg(not(feature = "uri"))]
                 let url = if url.contains("://") {
                     url.to_string()
                 } else {
-                    format!("http://{url}/")
+                    // Pre-allocate with known prefix length
+                    let mut full_url = String::with_capacity(8 + url.len()); // "http://" + url + "/"
+                    full_url.push_str("http://");
+                    full_url.push_str(url);
+                    full_url.push('/');
+                    full_url
                 };
 
                 parsed.url = url;
@@ -61,13 +71,25 @@ fn parse_input(input: &str) -> Result<ParsedRequest> {
                     .next()
                     .expect("header string must be present")
                     .as_str();
-                let mut kv = s.splitn(2, ':');
-                let name = kv.next().expect("key must present").trim();
-                let value = kv.next().expect("value must present").trim();
-                parsed.headers.insert(
-                    HeaderName::from_str(name).context(ParseHeaderNameSnafu)?,
-                    HeaderValue::from_str(value).context(ParseHeaderValueSnafu)?,
-                );
+
+                // Use split_once for better performance
+                if let Some((name, value)) = s.split_once(':') {
+                    let header_value = unescape_string(value.trim());
+                    parsed.headers.insert(
+                        HeaderName::from_str(name.trim()).context(ParseHeaderNameSnafu)?,
+                        HeaderValue::from_str(&header_value).context(ParseHeaderValueSnafu)?,
+                    );
+                } else {
+                    // Fallback for malformed headers (should be rare)
+                    let mut kv = s.splitn(2, ':');
+                    let name = kv.next().expect("key must present").trim();
+                    let value = kv.next().expect("value must present").trim();
+                    let header_value = unescape_string(value);
+                    parsed.headers.insert(
+                        HeaderName::from_str(name).context(ParseHeaderNameSnafu)?,
+                        HeaderValue::from_str(&header_value).context(ParseHeaderValueSnafu)?,
+                    );
+                }
             }
             Rule::auth => {
                 let s = pair
@@ -75,7 +97,11 @@ fn parse_input(input: &str) -> Result<ParsedRequest> {
                     .next()
                     .expect("header string must be present")
                     .as_str();
-                let basic_auth = format!("Basic {}", STANDARD.encode(s.as_bytes()));
+                let encoded = STANDARD.encode(s.as_bytes());
+                // Pre-allocate with known prefix length
+                let mut basic_auth = String::with_capacity(6 + encoded.len()); // "Basic " + encoded
+                basic_auth.push_str("Basic ");
+                basic_auth.push_str(&encoded);
                 parsed.headers.insert(
                     AUTHORIZATION,
                     basic_auth.parse().context(ParseHeaderValueSnafu)?,
@@ -111,9 +137,16 @@ fn parse_input(input: &str) -> Result<ParsedRequest> {
     Ok(parsed)
 }
 
+// Cached minijinja environment for better performance
+static TEMPLATE_ENV: OnceLock<Environment<'static>> = OnceLock::new();
+
+fn get_template_env() -> &'static Environment<'static> {
+    TEMPLATE_ENV.get_or_init(Environment::new)
+}
+
 impl ParsedRequest {
     pub fn load(input: &str, context: impl Serialize) -> Result<Self> {
-        let env = Environment::new();
+        let env = get_template_env();
         let input = env.render_str(input, context).context(RenderSnafu)?;
         parse_input(&input)
     }
@@ -135,10 +168,16 @@ impl ParsedRequest {
     fn form_urlencoded(&self) -> String {
         let mut encoded = form_urlencoded::Serializer::new(String::new());
         for item in &self.body {
-            let mut kv = item.splitn(2, '=');
-            let key = kv.next().expect("key must present");
-            let value = kv.next().expect("value must present");
-            encoded.append_pair(remove_quote(key), remove_quote(value));
+            // Use split_once for better performance
+            if let Some((key, value)) = item.split_once('=') {
+                encoded.append_pair(remove_quote(key), remove_quote(value));
+            } else {
+                // Fallback for malformed form data (should be rare)
+                let mut kv = item.splitn(2, '=');
+                let key = kv.next().expect("key must present");
+                let value = kv.next().expect("value must present");
+                encoded.append_pair(remove_quote(key), remove_quote(value));
+            }
         }
         encoded.finish()
     }
@@ -177,18 +216,54 @@ impl TryFrom<&ParsedRequest> for reqwest::RequestBuilder {
 }
 
 fn remove_quote(s: &str) -> &str {
-    match (&s[0..1], &s[s.len() - 1..]) {
-        ("'", "'") => &s[1..s.len() - 1],
-        ("\"", "\"") => &s[1..s.len() - 1],
-        _ => s,
+    let bytes = s.as_bytes();
+
+    // Check if string is long enough and has matching quotes
+    if bytes.len() >= 2 {
+        match (bytes[0], bytes[bytes.len() - 1]) {
+            (b'\'', b'\'') => &s[1..s.len() - 1],
+            (b'"', b'"') => &s[1..s.len() - 1],
+            _ => s,
+        }
+    } else {
+        s
     }
+}
+
+fn unescape_string(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    let mut chars = s.chars();
+
+    while let Some(ch) = chars.next() {
+        if ch == '\\' {
+            if let Some(next_ch) = chars.next() {
+                match next_ch {
+                    '"' | '\\' | '/' => result.push(next_ch),
+                    'n' => result.push('\n'),
+                    'r' => result.push('\r'),
+                    't' => result.push('\t'),
+                    _ => {
+                        // If it's not a recognized escape sequence, keep both characters
+                        result.push(ch);
+                        result.push(next_ch);
+                    }
+                }
+            } else {
+                result.push(ch);
+            }
+        } else {
+            result.push(ch);
+        }
+    }
+
+    result
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use anyhow::Result;
-    use http::{header::ACCEPT, Method};
+    use http::{Method, header::ACCEPT};
     use serde_json::json;
 
     #[test]
@@ -240,19 +315,22 @@ mod tests {
 
     #[tokio::test]
     async fn parse_curl_3_should_work() -> Result<()> {
-        let input = r#"curl https://api.stripe.com/v1/charges \
-        -u {{ key }}: \
-        -H "Stripe-Version: 2022-11-15""#;
+        let input = r#"curl https://httpbin.org/basic-auth/testuser/testpass \
+        -u {{ username }}:{{ password }} \
+        -H "Accept: application/json""#;
 
-        let parsed =
-            ParsedRequest::load(input, json!({ "key": "sk_test_4eC39HqLyjWDarjtT1zdp7dc" }))?;
+        let parsed = ParsedRequest::load(
+            input,
+            json!({ "username": "testuser", "password": "testpass" }),
+        )?;
         assert_eq!(parsed.method, Method::GET);
-        assert_eq!(parsed.url.to_string(), "https://api.stripe.com/v1/charges");
+        assert_eq!(
+            parsed.url.to_string(),
+            "https://httpbin.org/basic-auth/testuser/testpass"
+        );
         assert_eq!(
             parsed.headers.get(AUTHORIZATION),
-            Some(&HeaderValue::from_static(
-                "Basic c2tfdGVzdF80ZUMzOUhxTHlqV0Rhcmp0VDF6ZHA3ZGM6"
-            ))
+            Some(&HeaderValue::from_str("Basic dGVzdHVzZXI6dGVzdHBhc3M=")?)
         );
 
         #[cfg(feature = "reqwest")]
@@ -319,6 +397,28 @@ mod tests {
         let parsed = ParsedRequest::from_str(input)?;
         assert_eq!(parsed.method, Method::POST);
         assert_eq!(parsed.body, vec!["{\"-name\":\"--John\",\" --age\":30}"]);
+        Ok(())
+    }
+
+    #[test]
+    fn parse_curl_with_escaped_json_in_header() -> Result<()> {
+        let input = r#"curl https://api.github.com/repos/owner/repo \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "X-Custom-Metadata: {\"version\":\"1.0.0\",\"client\":\"rust\"}" \
+            -H "Accept: application/json""#;
+        let parsed = ParsedRequest::from_str(input)?;
+        assert_eq!(parsed.method, Method::GET);
+        assert_eq!(
+            parsed.url.to_string(),
+            "https://api.github.com/repos/owner/repo"
+        );
+
+        // Verify the header with escaped JSON is parsed correctly
+        let header_value = parsed.headers.get("X-Custom-Metadata");
+        assert!(header_value.is_some());
+        let header_str = header_value.unwrap().to_str().unwrap();
+        assert_eq!(header_str, r#"{"version":"1.0.0","client":"rust"}"#);
+
         Ok(())
     }
 }

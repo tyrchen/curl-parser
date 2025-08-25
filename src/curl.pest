@@ -8,7 +8,7 @@ comment = _{ "#" ~ (!newline ~ ANY)* ~ newline }
 single_quoted = _{ "'" ~ single_quoted_inner ~ "'" }
 single_quoted_inner = { (!"'" ~ ANY)* }
 double_quoted = _{ "\"" ~ double_quoted_inner ~ "\"" }
-double_quoted_inner = { (!"\"" ~ ANY)* }
+double_quoted_inner = { (("\\" ~ ANY) | (!"\"" ~ ANY))* }
 
 none_ws = { (!ws ~ ANY)+ }
 url_plain = @{ "http" ~ "s"? ~ "://" ~ none_ws }

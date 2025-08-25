@@ -89,7 +89,7 @@ use http::{HeaderMap, Method};
 
 pub use error::Error;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct ParsedRequest {
     pub method: Method,
     #[cfg(feature = "uri")]
@@ -99,4 +99,19 @@ pub struct ParsedRequest {
     pub headers: HeaderMap,
     pub body: Vec<String>,
     pub insecure: bool,
+}
+
+impl Default for ParsedRequest {
+    fn default() -> Self {
+        Self {
+            method: Method::GET,
+            #[cfg(feature = "uri")]
+            url: Uri::default(),
+            #[cfg(not(feature = "uri"))]
+            url: String::new(),
+            headers: HeaderMap::with_capacity(8), // Pre-allocate for typical header count
+            body: Vec::with_capacity(4),          // Pre-allocate for typical body parts count
+            insecure: false,
+        }
+    }
 }
